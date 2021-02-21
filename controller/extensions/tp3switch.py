@@ -10,12 +10,13 @@ class SwitchData:
     self.port = port
 
 class SwitchController:
-  def __init__(self, dpid, connection):
+  def __init__(self, dpid, connection, topology):
     self.dpid = dpid
     self.connection = connection
     # El SwitchController se agrega como handler de los eventos del switch
     self.connection.addListeners(self)
     self.links = []
+    self.topology = topology
 
   def _handle_PacketIn(self, event):
     """
@@ -25,10 +26,10 @@ class SwitchController:
     packet = event.parsed
     log.info("Packet arrived to switch %s from %s to %s", self.dpid, packet.src, packet.dst)
 
-    #TODO: Hay dos problemas a resolver:
-    #Si es un link en el borde debe identificar si el paquete viene de un host conectado a el:
-    #Si lo es, enviar a los otros host y/o enviar a la red
-    #Si no lo es, no reinsertar en la red, distribuirlo a los host o descartarlo si no existen
+    # TODO: Hay dos problemas a resolver:
+    # Si es un link en el borde debe identificar si el paquete viene de un host conectado a el:
+    # Si lo es, enviar a los otros host y/o enviar a la red
+    # Si no lo es, no reinsertar en la red, distribuirlo a los host o descartarlo si no existen
 
     # Veo en donde estoy en la topologia
     # if self._is_end():
@@ -41,6 +42,7 @@ class SwitchController:
   def addLink(self, sw, port):
     self.links.append(SwitchData(sw, port))
     log.info("SW %s connected to SW %s at port %s", self.dpid, sw.dpid, port)
+
 
 
   def _is_end(self):
@@ -66,7 +68,7 @@ class SwitchController:
 
 
   def _send_to_link(self, event):
-# Lo dirijo a un link
+    # Lo dirijo a un link
     incoming_port = event.port
     incoming_links = None
     # Get which link sent the packet to determine direction of the flow
