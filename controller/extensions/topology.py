@@ -63,33 +63,51 @@ class Topology:
         # de dpid_from a dpid_to
         return None
 
-    def __min_distance(dist, visited)
+
+    def __min_distance(self, dist, visited)
         # A utility function to find the vertex with
         # minimum distance value, from the set of vertices
         # not yet included in shortest path tree
 
-    def __are_neighbours(dpid_i, dpid_j)
+        # Initilaize minimum distance for next node
+        _min = sys.maxsize
+ 
+        # Search not nearest vertex not in the
+        # shortest path tree
+        for dpid in self.graph.keys():
+            if dist[dpid] < _min and not visited[dpid]:
+                _min = dist[dpid]
+                dpid_with_min_index = dpid
+ 
+        return dpid_with_min_dist
+
+
+    def __are_neighbours(self, dpid_u, dpid_v)
+        return dpid_v in self.graph[dpid_u][NEIGHBOURS]
+
 
     def _dijkstra(self, dpid_src):
         # devuelve el camino minimo del switch dpid_src
         # a todos los otros switches de la todopologia
 
+        _switches = self.graph.keys()
+
         # la cantidad de vertices es la cantidad de 
         # switches en nuestra topologia
-        num_switches = len(self.graph)
+        num_switches = len(_switches)
 
         dist = {}
         visited = {}
 
         # inicializamos las distancias de todos los
         # switches y los marcamos como no visitados
-        for dpid in self.graph.keys():
+        for dpid in _switches:
             dist[dpid] = sys.maxsize
             visited[dpid] = False
 
         dist[dpid_src] = 0
  
-        for count in num_switches:
+        for _ in range(num_switches):
  
             # Pick the minimum distance vertex from
             # the set of vertices not yet processed.
@@ -104,8 +122,8 @@ class Topology:
             # of the picked vertex only if the current
             # distance is greater than new distance and
             # the vertex in not in the shotest path tree
-            for dpid_v in self.graph.keys():
-                if __are_neighbours(dpid_u, dpid_v) and not visited[dpid_v] and 
-                dist[dpid_v] > dist[dpid_u] + 1: # 1 poruqe asumimos que el la red no es pedsada
-                
-                    dist[dpid_v] = dist[dpid_u] + self.graph[dpid_u][dpid_v]
+            for dpid_v in _switches:
+                if __are_neighbours(dpid_u, dpid_v) and not visited[dpid_v]
+                    # 1 poruqe asumimos que el la red no es pedsada
+                    dist[dpid_v] = dist[dpid_u] + 1
+

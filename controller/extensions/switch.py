@@ -81,7 +81,19 @@ class SwitchController:
         # somos una de las extremidades del switch
         return link.dpi1 == self.dpid or link.dpid2 == self.dpid
 
+        
+    def _forward(packet, output_port):
+        # Instructs the switch to resend a packet that it had sent to us.
+        # "packet_in" is the ofp_packet_in object the switch had sent to the
+        # controller due to a table-miss.
+            
+        msg = of.ofp_packet_out()
+        msg.data = packet_in
 
-# TODO:
-# programar el forward
-# programar el djisktra o shortes path
+        # Add an action to send to the specified port
+        action = of.ofp_action_output(port = out_port)
+        msg.actions.append(action)
+
+        # Send message to switch
+        self.connection.send(msg)
+
