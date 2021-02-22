@@ -1,47 +1,45 @@
 from pox.lib.util import dpid_to_str
 
-SWITCH = 'switch'
-NEIGHBOURS = 'neighbours'
-
-"""
-{
-    dpid = {
-        switch: sw,
-        neighbours = []
-    }
-}
-"""
-
-X puerto_enmtra------púerto_salida Y
-
-# expects dpid as string
 class Topology:
-    def ___init__(self, n_switches):
+    SWITCH = 'switch'
+    NEIGHBOURS = 'neighbours'
+
+    # estructura de la todopologia
+    # {    
+    #   dpid => {
+    #             SWITCH => SwitchController
+    #             NEIGHBOURS => [dpid's ...]
+    #           } 
+    # }
+
+    def ___init__(self):
         self.graph = {}
 
+
     def add_switch(self, dpid, switch):
-        self.graph[dpid_to_str(dpid)] = {
-            SWITCH: switch,
-            NEIGHBOURS: [],
-        }
+        entry = {SWITCH: switch, NEIGHBOURS: []}
+        self.graph[dpid_to_str(dpid)] = entry
+
 
     def add_link(self, link):
         dpid1 = dpid_to_str(link.dpid1)
         dpid2 = dpid_to_str(link.dpid2)
-    
+
+        # agrega el link a los switch_controllers
+        self.graph[dpid1][SWITCH].add_link(link)
+        self.graph[dpid2][SWITCH].add_link(link)
+        
+        # setea los dpis vecinos para ambos switches
+        # conectados al link
         self.graph[dpid1][NEIGHBOURS].append(dpid2)
         self.graph[dpid2][NEIGHBOURS].append(dpid1)
 
-        self.graph[dpid1][SWITCH].add_link(link)
-        self.graph[dpid2][SWITCH].add_link(link)
 
     def remove_switch(self, dpid):
+        # primero buscamos para todos los vecinos del switch removido
+        # y lo removemos de su lista de vecinos
         for neighbour in self.graph[dpid_to_str(dpid)][NEIGHBOURS]:
             self.graph[neighbour][NEIGHBOURS].remove(dpid_to_str(dpid))
+        
+        # removemos el switch del grafo
         del self.graph[dpid_to_str(dpid)]
-
-    def get_neighbour_switches(self, dpid):
-        switches = []
-        for neighbour in self.graph[dpid_to_str(dpid)][NEIGHBOURS]
-            switches.append(self.graph[neighbour][SWITCH])
-        return switches
