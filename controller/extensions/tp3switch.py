@@ -14,11 +14,13 @@ class SwitchController:
         
         # This component attempts to keep track of hosts 
         # in the network – where they are and how they are 
-        # configured (at least their MAC/IP addresses).  W
-        # hen things change, the component raises a HostEvent
+        # configured (at least their MAC/IP addresses).  
+        # When things change, the component raises a HostEvent
+        self.host_tracker = host_tracker()
+        
+        # repo de jemplo donde se explica el funcionamiento del host_tracker
         # https://github.com/kbmorris/sdn/blob/master/pox/misc/gephi_topo.py
         
-        self.host_tracker = host_tracker()
         self.topology = topology
         self.dpid = dpid
         self.links = []  
