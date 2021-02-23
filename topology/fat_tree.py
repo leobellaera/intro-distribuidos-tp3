@@ -8,7 +8,7 @@ En este caso estamos creando una topologia muy simple con la siguiente forma
 from mininet.topo import Topo
 
 
-class Example(Topo):
+class FatTree(Topo):
     def build(self, tree_levels=3):
 
         switches = {}
@@ -40,4 +40,4 @@ class Example(Topo):
             self.addLink(switches[tree_levels - 1][i], hs)
 
 
-topos = {'example': Example}
+topos = {'fat_tree': FatTree}
