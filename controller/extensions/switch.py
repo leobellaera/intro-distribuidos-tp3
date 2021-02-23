@@ -34,7 +34,6 @@ class SwitchController:
     def add_link(self, link):
         # se agrega un nuevo link del switch a otro
         # nuevo switch
-
         self.links.append(link)
 
 
@@ -62,6 +61,8 @@ class SwitchController:
         if output_port == None: return # descartamos
 
         log.info("HANDLE_PACKET_IN: output port %s", str(output_port))
+
+        # TODO: Agregar setear tabla al switch
         self._forward(event, output_port)
 
 
