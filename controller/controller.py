@@ -4,12 +4,13 @@ import pox.openflow.spanning_tree
 import pox.forwarding.l2_learning
 from pox.lib.util import dpid_to_str
 from extensions.topology import Topology
-from extensions.tp3switch import SwitchController
+from extensions.switch import SwitchController
 
-ore.getLogger()
+log = core.getLogger()
 
 class Controller:
     def __init__ (self):
+
         self.connections = set()
         self.topology = Topology()
 
@@ -32,12 +33,12 @@ class Controller:
         # nuevo switch establece conexion
         # Se encarga de crear un nuevo switch controller 
         # para manejar los eventos de cada switch
-        log.info("Switch %s has come up.", dpid_to_str(event.dpid))
-        
-        if (event.connection not in self.connections):
+        if event.connection not in self.connections:
+            log.info("Switch %s has come up.", dpid_to_str(event.dpid))
+
             self.connections.add(event.connection)
             sc = SwitchController(event.dpid, event.connection, self.topology)
-            self.topology.add_switch(event.dpid, sc)
+            self.topology.add_switch(sc)
 
 
     def _handle_LinkEvent(self, event):
@@ -56,24 +57,15 @@ class Controller:
         # Se encarga de remover el nuevo switch controller 
         # tanto de las conexiones como de la topologia
 
-        if (event.connection in self.connections):
+        if event.connection in self.connections:
             self.connections.remove(event.connection)
             self.topology.remove_switch(dpid)
     
 
-    def launch():
-        # Inicializando el modulo openflow_discovery
-        pox.openflow.discovery.launch()
+def launch():
+    # Inicializando el modulo openflow_discovery
+    pox.openflow.discovery.launch()
 
-        # Registrando el Controller en pox.core para 
-        # que sea ejecutado
-        core.registerNew(Controller)
-
-        """
-        Corriendo Spanning Tree Protocol y el modulo l2_learning.
-        No queremos correrlos para la resolucion del TP.
-        Aqui lo hacemos a modo de ejemplo
-        """
-    
-        #pox.openflow.spanning_tree.launch()
-        #pox.forwarding.l2_learning.launch()
+    # Registrando el Controller en pox.core para 
+    # que sea ejecutado
+    core.registerNew(Controller)

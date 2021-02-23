@@ -1,24 +1,25 @@
+import sys
+from pox.core import core
+from collections import deque
 from pox.lib.util import dpid_to_str
 
+SWITCH = 'switch'
+NEIGHBOURS = 'neighbours'
+
+log = core.getLogger()
+
 class Topology:
-    SWITCH = 'switch'
-    NEIGHBOURS = 'neighbours'
-
-    # estructura de la todopologia
-    # {    
-    #   dpid => {
-    #             SWITCH => SwitchController
-    #             NEIGHBOURS => [dpid's ...]
-    #           } 
-    # }
-
-    def ___init__(self):
+    def __init__(self):
         self.graph = {}
 
 
-    def add_switch(self, dpid, switch):
+    def add_switch(self, switch):
         entry = {SWITCH: switch, NEIGHBOURS: []}
-        self.graph[dpid_to_str(dpid)] = entry
+        self.graph[dpid_to_str(switch.dpid)] = entry
+
+
+    def get_switch(self, dpid):
+        return self.graph[dpid_to_str(dpid)][SWITCH]
 
 
     def add_link(self, link):
@@ -38,6 +39,7 @@ class Topology:
     def remove_switch(self, dpid):
         # primero buscamos para todos los vecinos del switch removido
         # y lo removemos de su lista de vecinos
+
         for neighbour in self.graph[dpid_to_str(dpid)][NEIGHBOURS]:
             self.graph[neighbour][NEIGHBOURS].remove(dpid_to_str(dpid))
         
@@ -48,23 +50,19 @@ class Topology:
     def get_shortest_path(self, dpid_from, dpid_to):
         # devuelve el camino mas corto para ir desde
         # un switch dpid_from hasta un switch dpid_to
-        
-        shortest_paths = _dijkstra(dpid_to_str(dpid_from))
 
-        # de los caminos minimos, buscamos en aquel que 
-        # que termina en un switch con dpid_to 
-        for path in shortest_paths:
-            last_swithc = path[-1]
+        shortest_path = self._shortest_path(dpid_to_str(dpid_from), dpid_to_str(dpid_to))
 
-            if last_swithc.dpid == dpid_to:
-                return path
+        sp_switch = []
+        for dpid in shortest_path:
+            sp_switch.append(self.graph[dpid][SWITCH])
 
-        # devolvemos None si no se encontro ningun camino
-        # de dpid_from a dpid_to
-        return None
+        log.info('shortest path: %s', str(shortest_path))
+
+        return sp_switch
 
 
-    def __min_distance(self, dist, visited)
+    def __min_distance(self, dist, visited):
         # A utility function to find the vertex with
         # minimum distance value, from the set of vertices
         # not yet included in shortest path tree
@@ -74,56 +72,54 @@ class Topology:
  
         # Search not nearest vertex not in the
         # shortest path tree
+        dpid_with_min_dist = None
+
         for dpid in self.graph.keys():
             if dist[dpid] < _min and not visited[dpid]:
                 _min = dist[dpid]
-                dpid_with_min_index = dpid
+                dpid_with_min_dist = dpid
  
         return dpid_with_min_dist
 
 
-    def __are_neighbours(self, dpid_u, dpid_v)
+    def __are_neighbours(self, dpid_u, dpid_v):
         return dpid_v in self.graph[dpid_u][NEIGHBOURS]
 
 
-    def _dijkstra(self, dpid_src):
-        # devuelve el camino minimo del switch dpid_src
-        # a todos los otros switches de la todopologia
+    def _shortest_path(self, dpid_from, dpid_to):        
+        log.info('Shortest path of from %s to %s', dpid_from, dpid_to)
 
-        _switches = self.graph.keys()
-
-        # la cantidad de vertices es la cantidad de 
-        # switches en nuestra topologia
-        num_switches = len(_switches)
-
-        dist = {}
         visited = {}
+        parents = {}
 
-        # inicializamos las distancias de todos los
-        # switches y los marcamos como no visitados
-        for dpid in _switches:
-            dist[dpid] = sys.maxsize
-            visited[dpid] = False
+        queue = deque()
+        queue.append(dpid_from)
 
-        dist[dpid_src] = 0
- 
-        for _ in range(num_switches):
- 
-            # Pick the minimum distance vertex from
-            # the set of vertices not yet processed.
-            # u is always equal to src in first iteration
-            dpid_u = self.__min_distance(dist, visited)
- 
-            # Put the minimum distance vertex in the
-            # shotest path tree
-            visited[dpid_u] = True
- 
-            # Update dist value of the adjacent vertices
-            # of the picked vertex only if the current
-            # distance is greater than new distance and
-            # the vertex in not in the shotest path tree
-            for dpid_v in _switches:
-                if __are_neighbours(dpid_u, dpid_v) and not visited[dpid_v]
-                    # 1 poruqe asumimos que el la red no es pedsada
-                    dist[dpid_v] = dist[dpid_u] + 1
+        visited[dpid_from] = True
+        parents[dpid_from] = None
 
+        while queue: # mientras tiene cosas
+            dpid_u = queue.popleft()
+
+            if dpid_u == dpid_to:
+                break
+
+            for dpid_v in self.graph[dpid_u][NEIGHBOURS]:
+
+                if not dpid_v in visited:
+                    visited[dpid_v] = True
+                    parents[dpid_v] = dpid_u
+                    queue.append(dpid_v)
+
+        if not dpid_to in visited:
+            return []
+            
+        dpid = dpid_to
+        shortest_path =	[]
+        
+        while parents[dpid]:
+            shortest_path.append(dpid)
+            dpid = parents[dpid]
+            
+        shortest_path.reverse()
+        return shortest_path
