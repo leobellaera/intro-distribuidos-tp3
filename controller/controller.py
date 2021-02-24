@@ -69,11 +69,11 @@ class Controller:
             self.topology.remove_switch(event.dpid)
 
 
-def launch(ttl = 30):
+def launch(tit = 30):
 
     # Seteamos el ttl
     global table_idle_timeout
-    table_idle_timeout = ttl
+    table_idle_timeout = tit
 
     # Inicializando el modulo openflow_discovery
     pox.openflow.discovery.launch()

@@ -7,7 +7,7 @@ log = core.getLogger()
 
 class SwitchController:
     def __init__(self, dpid, connection, topology, table_idle_timeout):
-        log.info("new switch, ttl: %s", table_idle_timeout)
+        log.info("new switch has come up, table_idle_timeout: %s", table_idle_timeout)
         self.connection = connection
         
         # El SwitchController se agrega como 
@@ -96,7 +96,7 @@ class SwitchController:
         packet = event.parsed
         msg = of.ofp_flow_mod()
         msg.match = of.ofp_match.from_packet(packet, event.port)
-        msg.idle_timeout = self.table_idle_timeout
+        msg.idle_timeout = int(self.table_idle_timeout)
         msg.actions.append(of.ofp_action_output(port=output_port))
         msg.data = event.ofp
         self.connection.send(msg)
