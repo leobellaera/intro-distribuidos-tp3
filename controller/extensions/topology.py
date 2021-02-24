@@ -1,4 +1,5 @@
 import sys
+from random import sample
 from pox.core import core
 from collections import deque
 from pox.lib.util import dpid_to_str
@@ -104,7 +105,8 @@ class Topology:
             if dpid_u == dpid_to:
                 break
 
-            for dpid_v in self.graph[dpid_u][NEIGHBOURS]:
+            #for dpid_v in self.graph[dpid_u][NEIGHBOURS]:
+            for dpid_v in sample(self.graph[dpid_u][NEIGHBOURS], len(self.graph[dpid_u][NEIGHBOURS])):
 
                 if not dpid_v in visited:
                     visited[dpid_v] = True

@@ -62,8 +62,8 @@ class SwitchController:
 
         log.info("HANDLE_PACKET_IN: output port %s", str(output_port))
 
-        # TODO: Agregar setear tabla al switch
-        self._forward(event, output_port)
+        self._set_flow_table(event, output_port)
+        #self._forward(event, output_port)
 
 
     def _calc_output_port(self, mac_entry):
@@ -91,7 +91,6 @@ class SwitchController:
         for link in self.links:
             log.info('CALC_OUTPUT_PORT: link dpid 1: [%s] port 1: [%i]', dpid_to_str(link.dpid1), link.port1)
             log.info('CALC_OUTPUT_PORT: link dpid 2: [%s] port 2: [%i]', dpid_to_str(link.dpid2), link.port2)
-            log.info('\n')
 
             if link.dpid1 == next_sw_to_go.dpid:
                 return link.port2
@@ -101,17 +100,26 @@ class SwitchController:
         return None
 
 
-    def _forward(self, packet_in, output_port):
+    def _forward(self, event, output_port):
         # Instructs the switch to resend a packet that it had sent to us.
-        # "packet_in" is the ofp_packet_in object the switch had sent to the
-        # controller due to a table-miss.
 
         msg = of.ofp_packet_out()
-        msg.data = packet_in.ofp
+        msg.data = event.ofp
 
         # Add an action to send to the specified port
         action = of.ofp_action_output(port = output_port)
         msg.actions.append(action)
 
         # Send message to switch
+        self.connection.send(msg)
+
+
+    def _set_flow_table(self, event, output_port):
+        log.info("Switch %s creating flow in output port %s", self.dpid, output_port)
+        packet = event.parsed
+        msg = of.ofp_flow_mod()
+        msg.match = of.ofp_match.from_packet(packet, event.port)
+        msg.idle_timeout = 5
+        msg.actions.append(of.ofp_action_output(port=output_port))
+        msg.data = event.ofp
         self.connection.send(msg)
