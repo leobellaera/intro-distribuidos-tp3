@@ -48,9 +48,12 @@ class Controller:
         link = event.link
         # link posee la sigueinte informacion
         # (dpid1, port1) ---------- (dpid2, port2)
+        self.topology.flush_flow_tables()
         if event.added:
+            log.info("Link up")
             self.topology.add_link(link)
         if event.removed:
+            log.info("Link down")
             self.topology.remove_link(link)
 
 
@@ -59,7 +62,7 @@ class Controller:
         # switch existente corta su conexion
         # Se encarga de remover el nuevo switch controller 
         # tanto de las conexiones como de la topologia
-
+        self.topology.flush_flow_tables()
         if event.connection in self.connections:
             self.connections.remove(event.connection)
             self.topology.remove_switch(event.dpid)

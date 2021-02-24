@@ -4,6 +4,7 @@ from pox.core import core
 from collections import deque
 from pox.lib.util import dpid_to_str
 
+LINKS = 'links'
 SWITCH = 'switch'
 NEIGHBOURS = 'neighbours'
 
@@ -15,7 +16,7 @@ class Topology:
 
 
     def add_switch(self, switch):
-        entry = {SWITCH: switch, NEIGHBOURS: []}
+        entry = {SWITCH: switch, NEIGHBOURS: [], LINKS: []}
         self.graph[dpid_to_str(switch.dpid)] = entry
 
 
@@ -28,50 +29,72 @@ class Topology:
         dpid2 = dpid_to_str(link.dpid2)
 
         # agrega el link a los switch_controllers
-        self.graph[dpid1][SWITCH].add_link(link)
-        self.graph[dpid2][SWITCH].add_link(link)
+        self.graph[dpid1][LINKS].append(link)
+        self.graph[dpid2][LINKS].append(link)
         
         # setea los dpis vecinos para ambos switches
         # conectados al link
         self.graph[dpid1][NEIGHBOURS].append(dpid2)
         self.graph[dpid2][NEIGHBOURS].append(dpid1)
 
+
     def remove_link(self, link):
         dpid1 = dpid_to_str(link.dpid1)
-        dpid2 = dpid_to_str(link.dpid2)
+        dpid2 = dpid_to_str(link.dpid2) 
 
         # quita el link a los switch_controllers
-        self.graph[dpid1][SWITCH].remove_link(link)
-        self.graph[dpid2][SWITCH].remove_link(link)
+        self.graph[dpid1][LINKS] = filter(lambda x: x.uni != link.uni, self.graph[dpid1][LINKS])
+        self.graph[dpid2][LINKS] = filter(lambda x: x.uni != link.uni, self.graph[dpid2][LINKS])
         
-        # remueve de la lista de vecinos de los switches
+        # remueve los switches de la lista de vecinos 
         self.graph[dpid1][NEIGHBOURS].remove(dpid2)
         self.graph[dpid2][NEIGHBOURS].remove(dpid1)
+
 
     def remove_switch(self, dpid):
         # primero buscamos para todos los vecinos del switch removido
         # y lo removemos de su lista de vecinos
 
-        for neighbour in self.graph[dpid_to_str(dpid)][NEIGHBOURS]:
-            self.graph[neighbour][NEIGHBOURS].remove(dpid_to_str(dpid))
+        dpid = dpid_to_str(dpid)
+    
+        for neighbour in self.graph[dpid][NEIGHBOURS]:
+            self.graph[neighbour][NEIGHBOURS].remove(dpid)
         
         # removemos el switch del grafo
-        del self.graph[dpid_to_str(dpid)]
+        del self.graph[dpid]
 
 
-    def get_shortest_path(self, dpid_from, dpid_to):
+    def get_shortest_path_output_port(self, dpid_from, dpid_to):
         # devuelve el camino mas corto para ir desde
         # un switch dpid_from hasta un switch dpid_to
 
         shortest_path = self._shortest_path(dpid_to_str(dpid_from), dpid_to_str(dpid_to))
 
-        sp_switch = []
+        sws_path = []
         for dpid in shortest_path:
-            sp_switch.append(self.graph[dpid][SWITCH])
+            sws_path.append(self.graph[dpid][SWITCH])
 
-        log.info('shortest path: %s', str(shortest_path))
+        log.info('| TOPOLOGY | shortest path: %s', str(shortest_path))
 
-        return sp_switch
+        if len(sws_path) == 0: return None
+
+        next_sw_to_go = sws_path[0]
+        log.info('| TOPOLOGY | next_switch_to_go: %s', next_sw_to_go.dpid)
+
+        # para el primer switch del camino, buscamos cual 
+        # es el link adyacente a nostros y obtenemos el puerto
+        # por el cual deberiamos forwardear el paquete para
+        # enviarselo a el
+        for link in self.graph[dpid_to_str(dpid_from)][LINKS]:
+            log.info('| TOPOLOGY | link dpid 1: [%s] port 1: [%i]', dpid_to_str(link.dpid1), link.port1)
+            log.info('| TOPOLOGY | link dpid 2: [%s] port 2: [%i]', dpid_to_str(link.dpid2), link.port2)
+
+            if link.dpid1 == next_sw_to_go.dpid:
+                return link.port2
+            if link.dpid2 == next_sw_to_go.dpid:
+                return link.port1
+
+        return None
 
 
     def __min_distance(self, dist, visited):
@@ -135,3 +158,7 @@ class Topology:
 
         shortest_path.reverse()
         return shortest_path
+
+    def flush_flow_tables(self):
+        for switch in self.graph:
+            self.graph[switch][SWITCH].flush_flow_table()

@@ -24,21 +24,11 @@ class SwitchController:
         
         self.topology = topology
         self.dpid = dpid
-        self.links = []
 
         # cuenta la cantidad de paquetes que pasaron 
         # por el switch durante su tiempo de vida
         # self.packet_count = 0
 
-
-    def add_link(self, link):
-        # se agrega un nuevo link del switch a otro
-        # nuevo switch
-        self.links.append(link)
-    
-    def remove_link(self, link):
-        # se elimina un link del switch a otro
-        self.links = filter(lambda x: x.uni != link.uni, self.links)
 
     def _handle_PacketIn(self, event):
         # Esta funcion es llamada cada vez que el switch recibe un paquete
@@ -56,6 +46,8 @@ class SwitchController:
         # obtenemos la mac del host al  
         # cual le queremos enviar el paquete 
         mac_entry = self.host_tracker.getMacEntry(packet.dst)
+
+        if not mac_entry: return
 
         # primero revisamos si la mac esta conectada
         # a nostros (somos un switch del edge)
@@ -80,27 +72,7 @@ class SwitchController:
         # obtenemos todos los switches que conforman
         # el camino al ultimo switch (en el que esta
         # conectado el switch con la mac_address)
-        sws_path = self.topology.get_shortest_path(self.dpid, dpid)
-
-        if len(sws_path) == 0: return None
-
-        next_sw_to_go = sws_path[0]
-        log.info('CALC_OUTPUT_PORT: next_switch_to_go: %s', next_sw_to_go.dpid)
-
-        # para el primer switch del camino, buscamos cual 
-        # es el link adyacente a nostros y obtenemos el puerto
-        # por el cual deberiamos forwardear el paquete para
-        # enviarselo a el
-        for link in self.links:
-            log.info('CALC_OUTPUT_PORT: link dpid 1: [%s] port 1: [%i]', dpid_to_str(link.dpid1), link.port1)
-            log.info('CALC_OUTPUT_PORT: link dpid 2: [%s] port 2: [%i]', dpid_to_str(link.dpid2), link.port2)
-
-            if link.dpid1 == next_sw_to_go.dpid:
-                return link.port2
-            if link.dpid2 == next_sw_to_go.dpid:
-                return link.port1
-
-        return None
+        return self.topology.get_shortest_path_output_port(self.dpid, dpid)
 
 
     def _forward(self, event, output_port):
@@ -125,4 +97,9 @@ class SwitchController:
         msg.idle_timeout = 5
         msg.actions.append(of.ofp_action_output(port=output_port))
         msg.data = event.ofp
+        self.connection.send(msg)
+
+
+    def flush_flow_table(self):
+        msg = of.ofp_flow_mod(command=of.OFPFC_DELETE)
         self.connection.send(msg)
