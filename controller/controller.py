@@ -7,6 +7,7 @@ from extensions.topology import Topology
 from extensions.switch import SwitchController
 
 log = core.getLogger()
+table_idle_timeout = 30
 
 class Controller:
     def __init__ (self):
@@ -37,7 +38,7 @@ class Controller:
             log.info("Switch %s has come up.", dpid_to_str(event.dpid))
 
             self.connections.add(event.connection)
-            sc = SwitchController(event.dpid, event.connection, self.topology)
+            sc = SwitchController(event.dpid, event.connection, self.topology, table_idle_timeout)
             self.topology.add_switch(sc)
 
 
@@ -66,9 +67,14 @@ class Controller:
         if event.connection in self.connections:
             self.connections.remove(event.connection)
             self.topology.remove_switch(event.dpid)
-    
 
-def launch():
+
+def launch(ttl = 30):
+
+    # Seteamos el ttl
+    global table_idle_timeout
+    table_idle_timeout = ttl
+
     # Inicializando el modulo openflow_discovery
     pox.openflow.discovery.launch()
 
