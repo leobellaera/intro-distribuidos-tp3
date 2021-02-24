@@ -48,7 +48,10 @@ class Controller:
         link = event.link
         # link posee la sigueinte informacion
         # (dpid1, port1) ---------- (dpid2, port2)
-        self.topology.add_link(link)
+        if event.added:
+            self.topology.add_link(link)
+        if event.removed:
+            self.topology.remove_link(link)
 
 
     def _handle_ConnectionDown(self, event):
@@ -59,7 +62,7 @@ class Controller:
 
         if event.connection in self.connections:
             self.connections.remove(event.connection)
-            self.topology.remove_switch(self.dpid)
+            self.topology.remove_switch(event.dpid)
     
 
 def launch():

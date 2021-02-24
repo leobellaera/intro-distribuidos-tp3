@@ -36,6 +36,17 @@ class Topology:
         self.graph[dpid1][NEIGHBOURS].append(dpid2)
         self.graph[dpid2][NEIGHBOURS].append(dpid1)
 
+    def remove_link(self, link):
+        dpid1 = dpid_to_str(link.dpid1)
+        dpid2 = dpid_to_str(link.dpid2)
+
+        # quita el link a los switch_controllers
+        self.graph[dpid1][SWITCH].remove_link(link)
+        self.graph[dpid2][SWITCH].remove_link(link)
+        
+        # remueve de la lista de vecinos de los switches
+        self.graph[dpid1][NEIGHBOURS].remove(dpid2)
+        self.graph[dpid2][NEIGHBOURS].remove(dpid1)
 
     def remove_switch(self, dpid):
         # primero buscamos para todos los vecinos del switch removido
@@ -105,7 +116,6 @@ class Topology:
             if dpid_u == dpid_to:
                 break
 
-            #for dpid_v in self.graph[dpid_u][NEIGHBOURS]:
             for dpid_v in sample(self.graph[dpid_u][NEIGHBOURS], len(self.graph[dpid_u][NEIGHBOURS])):
 
                 if not dpid_v in visited:
@@ -115,13 +125,13 @@ class Topology:
 
         if not dpid_to in visited:
             return []
-            
+
         dpid = dpid_to
         shortest_path =	[]
-        
+
         while parents[dpid]:
             shortest_path.append(dpid)
             dpid = parents[dpid]
-            
+
         shortest_path.reverse()
         return shortest_path

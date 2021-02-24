@@ -35,7 +35,10 @@ class SwitchController:
         # se agrega un nuevo link del switch a otro
         # nuevo switch
         self.links.append(link)
-
+    
+    def remove_link(self, link):
+        # se elimina un link del switch a otro
+        self.links = filter(lambda x: x.uni != link.uni, self.links)
 
     def _handle_PacketIn(self, event):
         # Esta funcion es llamada cada vez que el switch recibe un paquete
