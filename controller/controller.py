@@ -7,7 +7,7 @@ from extensions.topology import Topology
 from extensions.switch import SwitchController
 
 log = core.getLogger()
-table_hard_timeout = 30
+table_hard_timeout = 60
 
 class Controller:
     def __init__ (self):
@@ -69,7 +69,7 @@ class Controller:
             self.topology.remove_switch(event.dpid)
 
 
-def launch(ttl=30):
+def launch(ttl=60):
 
     # Seteamos el ttl
     global table_hard_timeout
