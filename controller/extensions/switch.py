@@ -6,8 +6,8 @@ from pox.host_tracker.host_tracker import host_tracker
 log = core.getLogger()
 
 class SwitchController:
-    def __init__(self, dpid, connection, topology, table_idle_timeout):
-        log.info("new switch has come up, table_idle_timeout: %s", table_idle_timeout)
+    def __init__(self, dpid, connection, topology, table_hard_timeout):
+        log.info("new switch has come up, table_hard_timeout: %s", table_hard_timeout)
         self.connection = connection
         
         # El SwitchController se agrega como 
@@ -25,7 +25,7 @@ class SwitchController:
         
         self.topology = topology
         self.dpid = dpid
-        self.table_idle_timeout = table_idle_timeout
+        self.table_hard_timeout = table_hard_timeout
 
         # cuenta la cantidad de paquetes que pasaron 
         # por el switch durante su tiempo de vida
@@ -59,8 +59,8 @@ class SwitchController:
 
         log.info("HANDLE_PACKET_IN: output port %s", str(output_port))
 
+        self._forward(event, output_port)
         self._set_flow_table(event, output_port)
-        #self._forward(event, output_port)
 
 
     def _calc_output_port(self, mac_entry):
@@ -95,10 +95,21 @@ class SwitchController:
         log.info("Switch %s creating flow in output port %s", self.dpid, output_port)
         packet = event.parsed
         msg = of.ofp_flow_mod()
-        msg.match = of.ofp_match.from_packet(packet, event.port)
-        msg.idle_timeout = int(self.table_idle_timeout)
+
+        header_l3 = packet.next
+        segment_l4 = header_l3.next
+        msg.match.dl_type = packet.type
+        msg.match.nw_src = header_l3.srcip
+        msg.match.nw_dst = header_l3.dstip
+        msg.match.nw_proto = header_l3.protocol
+        if (header_l3.protocol == header_l3.TCP_PROTOCOL) or (header_l3.protocol == header_l3.UDP_PROTOCOL):
+            msg.match.tp_src = segment_l4.srcport
+            msg.match.tp_dst = segment_l4.dstport
+
+        # msg.match = of.ofp_match.from_packet(packet, event.port)
+        msg.hard_timeout = int(self.table_hard_timeout)
         msg.actions.append(of.ofp_action_output(port=output_port))
-        msg.data = event.ofp
+        # msg.data = event.ofp
         self.connection.send(msg)
 
 
