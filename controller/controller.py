@@ -9,15 +9,15 @@ from extensions.switch import SwitchController
 log = core.getLogger()
 table_hard_timeout = 60
 
+
 class Controller:
-    def __init__ (self):
+    def __init__(self):
 
         self.connections = set()
         self.topology = Topology()
 
         # Esperando que los modulos openflow y openflow_discovery esten listos
         core.call_when_ready(self.startup, ('openflow', 'openflow_discovery'))
-
 
     def startup(self):
         # Esta funcion se encarga de inicializar el controller
@@ -28,11 +28,10 @@ class Controller:
         core.openflow_discovery.addListeners(self)
         log.info('Controller initialized')
 
-
     def _handle_ConnectionUp(self, event):
-        # Esta funcion es llamada cada vez que un 
+        # Esta funcion es llamada cada vez que un
         # nuevo switch establece conexion
-        # Se encarga de crear un nuevo switch controller 
+        # Se encarga de crear un nuevo switch controller
         # para manejar los eventos de cada switch
         if event.connection not in self.connections:
             log.info("Switch %s has come up.", dpid_to_str(event.dpid))
@@ -41,13 +40,12 @@ class Controller:
             sc = SwitchController(event.dpid, event.connection, self.topology, table_hard_timeout)
             self.topology.add_switch(sc)
 
-
     def _handle_LinkEvent(self, event):
-        # Esta funcion es llamada cada vez que 
+        # Esta funcion es llamada cada vez que
         # openflow_discovery descubre un nuevo enlace
-        
+
         link = event.link
-        # link posee la sigueinte informacion
+        # link posee la siguiente informacion
         # (dpid1, port1) ---------- (dpid2, port2)
         self.topology.flush_flow_tables()
         if event.added:
@@ -57,11 +55,10 @@ class Controller:
             log.info("Link down")
             self.topology.remove_link(link)
 
-
     def _handle_ConnectionDown(self, event):
-        # Esta funcion es llamada cada vez que un 
+        # Esta funcion es llamada cada vez que un
         # switch existente corta su conexion
-        # Se encarga de remover el nuevo switch controller 
+        # Se encarga de remover el nuevo switch controller
         # tanto de las conexiones como de la topologia
         self.topology.flush_flow_tables()
         if event.connection in self.connections:
