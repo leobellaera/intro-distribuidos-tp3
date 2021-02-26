@@ -28,12 +28,12 @@ class Topology:
 
         # agrega el link a los switch_controllers
         self.graph[dpid1][LINKS].append(link)
-        self.graph[dpid2][LINKS].append(link)
+        # self.graph[dpid2][LINKS].append(link)
 
         # setea los dpis vecinos para ambos switches
         # conectados al link
         self.graph[dpid1][NEIGHBOURS].append(dpid2)
-        self.graph[dpid2][NEIGHBOURS].append(dpid1)
+        # self.graph[dpid2][NEIGHBOURS].append(dpid1)
 
     def remove_link(self, link):
         dpid1 = dpid_to_str(link.dpid1)
@@ -43,13 +43,13 @@ class Topology:
         self.graph[dpid1][LINKS] = filter(
             lambda x: x.uni != link.uni, self.graph[dpid1][LINKS]
         )
-        self.graph[dpid2][LINKS] = filter(
-            lambda x: x.uni != link.uni, self.graph[dpid2][LINKS]
-        )
+        # self.graph[dpid2][LINKS] = filter(
+        #    lambda x: x.uni != link.uni, self.graph[dpid2][LINKS]
+        # )
 
         # remueve los switches de la lista de vecinos
         self.graph[dpid1][NEIGHBOURS].remove(dpid2)
-        self.graph[dpid2][NEIGHBOURS].remove(dpid1)
+        # self.graph[dpid2][NEIGHBOURS].remove(dpid1)
 
     def remove_switch(self, dpid):
         # primero buscamos para todos los vecinos del switch removido
@@ -75,27 +75,27 @@ class Topology:
         for dpid in shortest_path:
             sws_path.append(self.graph[dpid][SWITCH])
 
-        log.info('| TOPOLOGY | shortest path: %s', str(shortest_path))
+        log.info('shortest path: %s', str(shortest_path))
 
         if len(sws_path) == 0:
             return None
 
         next_sw_to_go = sws_path[0]
-        log.info('| TOPOLOGY | next_switch_to_go: %s', next_sw_to_go.dpid)
+        log.info('next_switch_to_go: %s', next_sw_to_go.dpid)
 
         # para el primer switch del camino, buscamos cual
         # es el link adyacente a nostros y obtenemos el puerto
         # por el cual deberiamos forwardear el paquete para
         # enviarselo a el
         for link in self.graph[dpid_to_str(dpid_from)][LINKS]:
-            log.info(
-                '| TOPOLOGY | link dpid 1: [%s] port 1: [%i]',
-                dpid_to_str(link.dpid1), link.port1
-            )
-            log.info(
-                '| TOPOLOGY | link dpid 2: [%s] port 2: [%i]',
-                dpid_to_str(link.dpid2), link.port2
-            )
+            # log.info(
+            #     '| TOPOLOGY | link dpid 1: [%s] port 1: [%i]',
+            #     dpid_to_str(link.dpid1), link.port1
+            # )
+            # log.info(
+            #     '| TOPOLOGY | link dpid 2: [%s] port 2: [%i]',
+            #     dpid_to_str(link.dpid2), link.port2
+            # )
 
             if link.dpid1 == next_sw_to_go.dpid:
                 return link.port2
@@ -127,7 +127,7 @@ class Topology:
         return dpid_v in self.graph[dpid_u][NEIGHBOURS]
 
     def _shortest_path(self, dpid_from, dpid_to):
-        log.info('Shortest path of from %s to %s', dpid_from, dpid_to)
+        log.info('calculating shortest path from %s to %s', dpid_from, dpid_to)
 
         visited = {}
         parents = {}

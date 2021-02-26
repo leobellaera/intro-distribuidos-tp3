@@ -37,7 +37,8 @@ class Controller:
             log.info("Switch %s has come up.", dpid_to_str(event.dpid))
 
             self.connections.add(event.connection)
-            sc = SwitchController(event.dpid, event.connection, self.topology, table_hard_timeout)
+            sc = SwitchController(event.dpid, event.connection, self.topology,
+                                  table_hard_timeout)
             self.topology.add_switch(sc)
 
     def _handle_LinkEvent(self, event):
@@ -49,10 +50,10 @@ class Controller:
         # (dpid1, port1) ---------- (dpid2, port2)
         self.topology.flush_flow_tables()
         if event.added:
-            log.info("Link up")
+            log.info("Link up from %s to %s", link.dpid1, link.dpid2)
             self.topology.add_link(link)
         if event.removed:
-            log.info("Link down")
+            log.info("Link down from %s to %s", link.dpid1, link.dpid2)
             self.topology.remove_link(link)
 
     def _handle_ConnectionDown(self, event):
@@ -67,14 +68,19 @@ class Controller:
 
 
 def launch(ttl=60):
-
-    # Seteamos el ttl
     global table_hard_timeout
-    table_hard_timeout = ttl
+
+    try:
+        val = int(ttl)
+        if val > 0:
+            # Seteamos el ttl
+            table_hard_timeout = ttl
+    except ValueError:
+        log.info("Invalid TTL, using default (60)")
 
     # Inicializando el modulo openflow_discovery
     pox.openflow.discovery.launch()
 
-    # Registrando el Controller en pox.core para 
+    # Registrando el Controller en pox.core para
     # que sea ejecutado
     core.registerNew(Controller)

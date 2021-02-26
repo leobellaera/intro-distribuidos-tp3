@@ -41,8 +41,9 @@ class SwitchController:
             # ignoramos paquetes ipv6
             return
 
+        log.info("------------------------------------------------------")
         log.info(
-            "Packet arrived to switch %s from %s to %s",
+            "HANDLE_PACKET_IN: Packet arrived to switch %s from %s to %s",
             self.dpid, packet.src, packet.dst
         )
 
@@ -57,11 +58,14 @@ class SwitchController:
         # a nostros (somos un switch del edge)
         output_port = self._calc_output_port(mac_entry)
 
-        if output_port == None:
+        if not output_port:
             # descartamos
             return
 
-        log.info("HANDLE_PACKET_IN: output port %s", str(output_port))
+        log.info(
+            "HANDLE_PACKET_IN: Switch %s creating flow in output port %s",
+            self.dpid, output_port
+        )
 
         # enviamos el paquete a traves del puerto obtenido
         self._forward(event, output_port)
@@ -75,6 +79,8 @@ class SwitchController:
         # esta conectado, devolvemos el puerto para
         # fowardear el paquete a nuestro host
         if dpid == self.dpid:
+            log.info("destination host connected to switch %s in port %s",
+                     self.dpid, mac_entry.port)
             return mac_entry.port
 
         # obtenemos todos los switches que conforman
@@ -96,15 +102,11 @@ class SwitchController:
         self.connection.send(msg)
 
     def _set_flow_table(self, event, output_port):
-        log.info(
-            "Switch %s creating flow in output port %s",
-            self.dpid, output_port
-        )
         packet = event.parsed
-        msg = of.ofp_flow_mod()
-
         header_l3 = packet.next
         segment_l4 = header_l3.next
+
+        msg = of.ofp_flow_mod()
         msg.match.dl_type = packet.type
         msg.match.nw_src = header_l3.srcip
         msg.match.nw_dst = header_l3.dstip
